@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Template</title>
+
+        <!-- load the desired font (alternatives available on fonts.google.com) -->
+        <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet">
+        <style>
+            body, html {
+                font-family: 'Roboto Mono', monospace;
+                font-size: 16px;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            #grid {
+                display: grid;
+                grid-template-columns: 128px auto 32px;
+                grid-template-rows: 24px auto 24px;
+                width: 100%;
+                height: 100%;
+            }
+
+            #grid-navbar {
+                background-color: RoyalBlue;
+                grid-column: 1 / 4;
+                grid-row: 1;
+            }
+
+            #grid-sidebar {
+                background-color: #b6b4d2;
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            #grid-main {
+                background-color: #222;
+                grid-column: 2 / 4;
+                grid-row: 2;
+            }
+
+            #grid-statusbar {
+                background-color: RoyalBlue;
+                grid-column: 1 / 4;
+                grid-row: 3;
+                overflow-x: hidden;
+            }
+
+            .svg-container {
+                display: inline-block;
+                position: relative;
+                width: 100%;
+                vertical-align: top;
+                overflow: hidden;
+            }
+
+            .svg-content {
+                display: inline-block;
+                position: absolute;
+                top: 200;
+                left: 200;
+            }
+
+            .vertex {
+                stroke: "#ccc";
+                stroke-width: 1px;
+                fill: "#000";
+            }
+
+            .link {
+                stroke: gray;
+                stroke-width: 2px;
+            }
+
+        </style>
+
+        <!-- load the d3.js library -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/6.5.0/d3.min.js"></script>
+        <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-selection/1.2.0/d3-selection.min.js"></script> -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-transition/1.1.1/d3-transition.min.js"></script>
+        <!--<script src="http://d3js.org/d3.v3.min.js"></script> -->
+        <!-- <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script> -->
+        <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+        <script src=https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.18.0/js/md5.min.js></script>
+        <script src=https://cdnjs.cloudflare.com/ajax/libs/clone/1.0.4/clone.min.js></script>
+        <script src=https://cdnjs.cloudflare.com/ajax/libs/d3-color/1.2.1/d3-color.min.js></script>
+        <script src="ngon_tilings.js"></script>
+    </head>
+
+    <body>
+        <section id="grid">
+            <div id="grid-navbar">
+                <label for="side_count">Number of sides:</label>
+                <input type="number" id="side_count" name="input_n" value=5>
+                <button id="random" name="tile_random">Random</button>
+                <button id="add" name="add">Add</button>
+                <button id="remove" name="remove">Remove</button>
+                <button id="star--" name="star--">Star--</button>
+                <button id="star++" name="star++">Star++</button>
+            </div>
+            <div id="grid-sidebar">
+                Display:
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_faces" checked>faces</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_table" checked>table</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_lines" checked>lines</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_edges" checked>edges</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_points" checked>points</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_vertices" checked>vertices</label>
+                <br>
+                <label><input type="checkbox" class="display_toggles" id="toggle_curves" unchecked>curves</label>
+                <br>
+                <br>
+                Animation:
+                <br>
+                <label><input type="number" class="display_styles" id="style_animation_duration" value=1.0 style="width: 48px;" min="0" max="1000" step="0.1"> sec(s)</label>
+                <br>
+                <br>
+                Back Colour:
+                <br>
+                <label><input type="color" class="display_other" id="background_colour" style="width: 48px;" value="#222"></label>
+                <br>
+                <br>
+                Edge Colour:
+                <br>
+                <select id="edge_colour_type" class="display_values" style="width: 112px;">
+                    <option value="hue 360">hue 360</option>
+                    <option value="hue 360 symmetric">hue 360 symmetric</option>
+                    <option value="hue 90">hue 90</option>
+                    <option value="hue 90 symmetric">hue 90 symmetric</option>
+                    <option value="saturation">saturation</option>
+                    <option value="luminance">luminance</option>
+                    <option value="constant">constant</option>
+                  </select>
+                <br>
+                <label><input type="color" class="display_inputs" id="edge_colour_base" style="width: 48px;" value="#1d72cd"></label>
+                <br>
+                <br>
+                Face Colour:
+                <br>
+                <select id="face_colour_type" class="display_values" style="width: 112px;">
+                    <option value="colour blend">colour blend</option>
+                    <option value="average edge">average edge</option>
+                    <option value="average cyclic">average cyclic</option>
+                    <option value="constant">constant</option>
+                  </select>
+                <br>
+                <label><input type="color" class="display_inputs" id="face_colour_base" style="width: 48px;" value="#1dcd72"></label>
+                <br>
+                <label><input type="number" class="display_styles" id="face_opacity" value=0.3 style="width: 48px;" min="0" max="1" step="0.02"> opcty</label>
+            </div>
+            <div id="grid-main" class="svg-container"></div>
+            <div id="grid-statusbar">statusbar</div>
+        </section>
+
+
+        <script>
+            chartDiv = document.getElementById("grid-main")
+
+            var jsonPaths = [
+                {"path": [{ "x": 20, "y": 980}, { "x": 980, "y": 20}, { "x": 20, "y": 20}, { "x": 980, "y": 980}]}
+            ];
+
+            var svg = d3.select(chartDiv)
+                    .append("svg")
+                    .attr("viewBox", "0 0 1600 1024")
+                    .attr("preserveAspectRatio", "xMidYMid meet")
+                    .attr("width", "100%")
+                    .attr("height", "100%")
+                    .classed("svg-content", true)
+
+            // elements for data join
+            var faces = svg.append("g"),
+                lines = svg.append("g"),
+                points = svg.append("g"),
+                curves = svg.append("g");
+
+            var t_duration = 1000
+
+            //	follow v4 general update pattern
+            function update(tiling) {
+                n = tiling.n;
+                var blueprint = tiling.blueprint;
+                var statusbar = document.getElementById("grid-statusbar");
+                statusbar.textContent="n: " + blueprint["n"] + ", placements: " + blueprint["placements"].map(d => "[" + d[0] + "," + d[1] + "]").join(", ");
+
+                edge_colour_type = document.getElementById("edge_colour_type").value;
+                edge_colour_base = document.getElementById("edge_colour_base").value;
+                face_colour_type = document.getElementById("face_colour_type").value;
+                face_colour_base = document.getElementById("face_colour_base").value;
+
+                t_exit = d3.transition()
+                    .duration(0.5*t_duration)
+                    .ease(d3.easeCubicOut);
+
+                t_update = d3.transition()
+                    .duration(0.6*t_duration)
+                    .delay(0.2*t_duration)
+                    .ease(d3.easeCubicOut);
+
+                t_enter = d3.transition()
+                    .duration(0.5*t_duration)
+                    .delay(0.5*t_duration)
+                    .ease(d3.easeCubicOut);
+
+                x_scale_ngon = d3.scaleLinear()
+                    .domain([-1, 1])
+                    .range([48, 976])
+                y_scale_ngon = d3.scaleLinear()
+                    .domain([-1, 1])
+                    .range([48, 976])
+
+                x_scale_table = d3.scaleLinear()
+                    .domain([-1, 0])
+                    .range([648, 1576])
+                y_scale_table = d3.scaleLinear()
+                    .domain([0, 1])
+                    .range([48, 976])
+
+                colours = []
+
+                // get point details
+                var point_details = [];
+                if (document.getElementById("toggle_vertices").checked) {
+                    point_details = point_details.concat(Object.values(tiling.vertices))
+                }
+                if (document.getElementById("toggle_points").checked) {
+                    point_details = point_details.concat(tiling.points)
+                }
+                points.selectAll(".point")
+                    .data(point_details, d => d.key)
+                    .join(
+                        enter => enter
+                            .append("circle")
+                            .attr("class", "point")
+                            .attr("fill", "#ccc")
+                            .attr("stroke", "#000")
+                            .attr("cx", d => x_scale_ngon(d.x))
+                            .attr("cy", d =>y_scale_ngon(d.y))
+                            .attr("r", 0.0001)
+                            .call(enter => enter.transition(t_enter)
+                                .delay((d, i) => 0.75*t_duration + 0.02*t_duration * Math.sqrt(i))
+                                .attr("r", d => Math.sqrt(256 / n))
+                            ),
+                        update => update
+                            .call(enter => update.transition(t_update)
+                                .attr("cx", d => x_scale_ngon(d.x))
+                                .attr("cy", d => y_scale_ngon(d.y))
+                                .attr("r", d => Math.sqrt(256 / n))
+                            ),
+                        exit => exit
+                            .call(exit => exit.transition(t_exit)
+                                .attr("r", 0.0001)
+                            .remove())
+                    );
+
+
+                // get line details
+                var line_details = [];
+                if (document.getElementById("toggle_edges").checked) {
+                    line_details = line_details.concat(Object.values(tiling.edges))
+                }
+                if (document.getElementById("toggle_lines").checked) {
+                    line_details = line_details.concat(tiling.lines)
+                }
+                if (document.getElementById("toggle_table").checked) {
+                    line_details = line_details.concat(tiling.unplaced_table_edges)
+                }
+                lines.selectAll(".line")
+                    .data(line_details, d => d.key)
+                    .join(
+                        enter => enter
+                            .append("line")
+                            .attr("class", "line")
+                            .style("stroke-width", d => d.placed ? Math.sqrt(256 / n) : Math.sqrt(64 / n))
+                            .style("stroke", d => d.colour(edge_colour_type, edge_colour_base))
+                            .attr("x1", d => { return d.placed ? d.line.x1_collapsed(x_scale_ngon) : d.line.x1_collapsed(x_scale_table)})
+                            .attr("y1", d => { return d.placed ? d.line.y1_collapsed(y_scale_ngon) : d.line.y1_collapsed(y_scale_table)})
+                            .attr("x2", d => { return d.placed ? d.line.x2_collapsed(x_scale_ngon) : d.line.x2_collapsed(x_scale_table)})
+                            .attr("y2", d => { return d.placed ? d.line.y2_collapsed(y_scale_ngon) : d.line.y2_collapsed(y_scale_table)})
+                            .call(enter => enter.transition(t_enter)
+                                .attr("x1", d => { return d.placed ? d.line.x1(x_scale_ngon) : d.line.x1(x_scale_table)})
+                                .attr("y1", d => { return d.placed ? d.line.y1(y_scale_ngon) : d.line.y1(y_scale_table)})
+                                .attr("x2", d => { return d.placed ? d.line.x2(x_scale_ngon) : d.line.x2(x_scale_table)})
+                                .attr("y2", d => { return d.placed ? d.line.y2(y_scale_ngon) : d.line.y2(y_scale_table)})
+                            ),
+                        update => update
+                            .call(update => update.transition(t_update)
+                                // .delay((d, i) => 0.25*t_duration + 0.05*t_duration * Math.sqrt(i))
+                                .style("stroke-width", d => d.placed ? Math.sqrt(256 / n) : Math.sqrt(64 / n))
+                                .style("stroke", d => d.colour(edge_colour_type, edge_colour_base))
+                                .attr("x1", d => { return d.placed ? d.line.x1(x_scale_ngon) : d.line.x1(x_scale_table)})
+                                .attr("y1", d => { return d.placed ? d.line.y1(y_scale_ngon) : d.line.y1(y_scale_table)})
+                                .attr("x2", d => { return d.placed ? d.line.x2(x_scale_ngon) : d.line.x2(x_scale_table)})
+                                .attr("y2", d => { return d.placed ? d.line.y2(y_scale_ngon) : d.line.y2(y_scale_table)})
+                            ),
+                        exit => exit
+                            .call(exit => exit.transition(t_exit)
+                                .attr("x1", d => { return d.placed ? d.line.x1_collapsed(x_scale_ngon) : d.line.x1_collapsed(x_scale_table)})
+                                .attr("y1", d => { return d.placed ? d.line.y1_collapsed(y_scale_ngon) : d.line.y1_collapsed(y_scale_table)})
+                                .attr("x2", d => { return d.placed ? d.line.x2_collapsed(x_scale_ngon) : d.line.x2_collapsed(x_scale_table)})
+                                .attr("y2", d => { return d.placed ? d.line.y2_collapsed(y_scale_ngon) : d.line.y2_collapsed(y_scale_table)})
+                                .remove()
+                            )
+                    );
+                console.log(parseFloat(document.getElementById("face_opacity").value))
+
+                // get face details
+                var face_details = [];
+                if (document.getElementById("toggle_faces").checked) {
+                    face_details = face_details.concat(Object.values(tiling.faces))
+                }
+                if (document.getElementById("toggle_table").checked) {
+                    face_details = face_details.concat(Object.values(tiling.unplaced_table))
+                }
+                f = faces.selectAll(".face")
+                    .data(face_details, d => d.key)
+                    .join(
+                        enter => enter
+                            .append("path")
+                            .attr("class", "face")
+	                        .attr("fill-opacity", parseFloat(document.getElementById("face_opacity").value))
+                            .attr("fill", d => d.colour(edge_colour_type, edge_colour_base, face_colour_type, face_colour_base))
+                            .attr("d", d => {return d.placed ? d.tiny_shape(x_scale_ngon, y_scale_ngon) : d.tiny_shape(x_scale_table, y_scale_table)})
+                            .on("click", faceClick)
+                            .call(enter => enter.transition(t_enter)
+                                .attr("d", d => {return d.placed ? d.shape(x_scale_ngon, y_scale_ngon) : d.shape(x_scale_table, y_scale_table)})
+                            ),
+                        update => update
+                            .call(update => update.transition(t_update)
+	                            .attr("fill-opacity", parseFloat(document.getElementById("face_opacity").value))
+                                .attr("fill", d => d.colour(edge_colour_type, edge_colour_base, face_colour_type, face_colour_base))
+                                .attr("d", d => {return d.placed ? d.shape(x_scale_ngon, y_scale_ngon) : d.shape(x_scale_table, y_scale_table)})
+                        ),
+                        exit => exit
+                            .call(exit => exit.transition(t_exit)
+                                .attr("d", d => {return d.placed ? d.tiny_shape(x_scale_ngon, y_scale_ngon) : d.tiny_shape(x_scale_table, y_scale_table)})
+                                .remove()
+                            )
+                    );
+
+                
+                // faces.selectAll(".face")
+                //     .data(face_details, (d, i) => d.key)
+                //     .on("click", function (d) {
+                //     console.log(d3.select(this))
+                //     console.log(d)
+                //     d3.select(this).attr({
+                //         fill: "orange",
+                //         r: radius * 2
+                //     });
+                // })
+                
+                // faces.selectAll(".face").on("click", function(d) {
+                //                 console.log(d)
+                //             })
+
+                // get curve details
+                var curve_details = [];
+                if (document.getElementById("toggle_curves").checked) {
+                    curve_details = curve_details.concat(tiling.bearing_shapes(x_scale_ngon, y_scale_ngon, edge_colour_type, edge_colour_base))
+                }
+                curves.selectAll(".curve")
+                    .data(curve_details, d => d.key)
+                    .join(
+                        enter => enter
+                            .append("path")
+                            .attr("class", "curve")
+                            .style("stroke-width", Math.sqrt(256 / n))
+                            .style("stroke", d => d.colour)
+                            .style("fill-opacity", 0)
+                            .attr("d", d => d.collapsed_shape)
+                            .call(enter => enter.transition(t_enter)
+                                .attr("d", d => d.shape)
+                            ),
+                        update => update
+                            .call(update => update.transition(t_update)
+                                .style("stroke-width", Math.sqrt(256 / n))
+                                .style("stroke", d => d.colour)
+                                .attr("d", d => d.shape),
+                            ),
+                        exit => exit
+                            .call(exit => exit.transition(t_exit)
+                                .attr("d", d => d.collapsed_shape)
+                                .remove()
+                            )
+                    );
+            }
+                
+            function faceClick (click, face) {
+                if (!click.shiftKey && face.placed) {
+                    tiling = tiling.remove_tile(face.placement.tile);
+                    update(tiling)
+                    return
+                }
+                
+                var tile = face.placement.tile;
+                var new_placement = face.placement;
+                if (!face.placed) {
+                    new_placement = new Placement(tiling.n, tile.orientation_2 + tiling.n, tile.orientation_1);
+                } else {
+                    tiling = tiling.remove_tile(face.placement.tile);
+                }
+                // only need two cases?
+                for (let attempt = 0; attempt < 4; attempt++) {
+                    var new_placement = new Placement(tiling.n, new_placement.bearing_2, (new_placement.bearing_1 + tiling.n) % (2*tiling.n));
+                    var face = tiling.add_placement(new_placement);
+                    if (face != null) {
+                        break;
+                    }
+                }
+
+                update(tiling)
+            }
+
+            
+            function random_tiling(n) {
+                tiling = new Tiling(n, [])
+
+                var retires = 10000;
+                while (retires > 0) {
+                    retires --;
+                    new_tiling = tiling.add_random_placement();
+                    if (new_tiling == null) {
+                        break;
+                    // } else {
+                    //     update(tiling);
+                    }
+                }
+
+                return tiling
+            }
+
+            tiling = random_tiling(parseInt(document.getElementById("side_count").value));
+            update(tiling);
+
+            document.getElementById("side_count").addEventListener("keyup", evt => {
+                console.log(evt)
+                if (evt.key === "Enter") {
+                    var n = parseInt(document.getElementById("side_count").value);
+                    tiling = tiling.update_n(n);
+                    // console.log(n);
+                    update(tiling);
+                }
+            });
+
+            document.getElementById("side_count").addEventListener("input", evt => {
+                console.log(evt)
+                var n = parseInt(document.getElementById("side_count").value);
+                tiling = tiling.update_n(n);
+                // console.log(n);
+                update(tiling);
+            });
+            
+            document.getElementById("style_animation_duration").addEventListener('input', function (evt) {
+                t_duration = 1000*parseFloat(document.getElementById("style_animation_duration").value);
+            });
+
+            document.getElementById("style_animation_duration").addEventListener("keyup", evt => {
+                if (evt.key === "Enter") {
+                    t_duration = 1000*parseFloat(document.getElementById("style_animation_duration").value);
+                }
+            });
+
+            document.getElementById("background_colour").addEventListener('input', avt => {
+                var colour = document.getElementById("background_colour").value;
+                document.getElementById("grid-main").style.background = colour 
+            }, false);
+            
+            document.getElementById("face_opacity").addEventListener('input', function (evt) {
+                update(tiling);
+            });
+
+            document.getElementById("face_opacity").addEventListener("keyup", evt => {
+                if (evt.key === "Enter") {
+                    update(tiling);
+                }
+            });
+
+            document.getElementById("random").addEventListener("click", d => {
+                tiling = random_tiling(tiling.n);
+                update(tiling);
+            });
+
+            document.getElementById("add").addEventListener("click", d => {
+                tiling.add_random_placement();
+                update(tiling);
+            });
+
+            document.getElementById("remove").addEventListener("click", d => {
+                tiling = tiling.remove_last_placement();
+                update(tiling);
+            });
+
+            document.getElementById("star--").addEventListener("click", d => {
+                new_n = tiling.n - 1 - (tiling.n % 2);
+                document.getElementById("side_count").value = new_n;
+                placements = star_tiling(new_n)
+                tiling = new Tiling(new_n, placements);
+                update(tiling);
+            });
+
+            document.getElementById("star++").addEventListener("click", d => {
+                new_n = tiling.n + 1 + (tiling.n % 2);
+                document.getElementById("side_count").value = new_n;
+                placements = star_tiling(new_n)
+                tiling = new Tiling(new_n, placements);
+                update(tiling);
+            });
+
+            var display_toggle_elements = document.getElementsByClassName("display_toggles");
+            var display_values_elements = document.getElementsByClassName("display_values");
+            var display_input_elements = document.getElementsByClassName("display_inputs");
+
+            var refresh_tiling = function() {
+                update(tiling);
+            };
+
+            for (var i = 0; i < display_toggle_elements.length; i++) {
+                display_toggle_elements[i].addEventListener('click', refresh_tiling, false);
+            }
+            for (var i = 0; i < display_values_elements.length; i++) {
+                display_values_elements[i].addEventListener('change', refresh_tiling, false);
+            }
+            for (var i = 0; i < display_input_elements.length; i++) {
+                display_input_elements[i].addEventListener('input', refresh_tiling, false);
+            }
+
+            document.getElementsByName("tile_random")[0].addEventListener("click", d => {
+                tiling = random_tiling(tiling.n);
+                update(tiling);
+            });
+
+            document.getElementById("grid-statusbar").addEventListener("dblclick", d => {
+                var placements = prompt("Enter a new tiling as list of pairs of bearings (0,1,... 2n-1)!", tiling.blueprint["placements"].map(d => "[" + d[0] + "," + d[1] + "]").join(", "));
+                placements = JSON.parse(placements).map(x => new Placement(this.n, x[0], x[1]))
+                tiling = new Tiling(tiling.n, placements);
+                update(tiling);
+            });
+
+            d3.select("body").on("keydown", function(p) {
+                // console.log("Key pressed: " + event.key)
+                switch(event.key) {
+                    case "r":
+                        tiling = random_tiling(tiling.n);
+                        update(tiling);
+                        break;
+                    case "ArrowUp":
+                        document.getElementById("side_count").value ++;
+                        var n = document.getElementById("side_count").value;
+                        tiling = tiling.update_n(n);
+                        // console.log(n);
+                        update(tiling);
+                        break;
+                    case "ArrowDown":
+                        document.getElementById("side_count").value --;
+                        var n = document.getElementById("side_count").value;
+                        tiling = tiling.update_n(n);
+                        // console.log(n);
+                        update(tiling);
+                        break;
+                    case "ArrowRight":
+                        tiling = tiling.remove_last_placement();
+                        update(tiling);
+                        break;
+                    case "ArrowLeft":
+                        tiling.add_random_placement();
+                        update(tiling);
+                        break;
+                    default:
+                        // code block
+                }
+            });
+
+        </script>
+
+    </body>
+
+</html>

@@ -26,3 +26,11 @@ I can recommend spending some time trying to solve this for yourself, so won't g
 
 Once I'd solve the puzzle, I was really interested in seeing what such a random rhombus tiling might look like for shapes larger than the best decagon I could draw by hand. Hence why I built this tool.
 
+### Visualiser
+
+More details and a web version can be found at [Observable:rhombus-tiling-visualiser](https://observablehq.com/@davidquick/rhombus-tiling-visualiser).
+
+![random_partial_tiling](blob:https://davidquick.static.observableusercontent.com/68da8cf7-9df8-408b-b94e-bfa49d138a04)
+![regular_large_tiling](blob:https://davidquick.static.observableusercontent.com/0314e808-948b-4f88-a5bd-846bd9912d43
+
+
